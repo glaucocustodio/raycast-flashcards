@@ -1,19 +1,34 @@
 import { ActionPanel, Form, Detail, List, Action, Icon, popToRoot, LocalStorage, showToast, Toast } from "@raycast/api";
 import { useCallback, useState, useEffect } from "react";
 
+const getCards = async function() {
+  let cards = await LocalStorage.getItem<string>("cards") || [];
+  try {
+    cards = JSON.parse(cards)
+  }
+  catch(err) {
+    console.log(err)
+  }
+  return cards
+}
+
+const setCards = async function(cards) {
+  return await LocalStorage.setItem("cards", JSON.stringify(cards));
+}
+
 function CreateCard() {
   const onSubmitForm = async (values) => {
-    let cards = await LocalStorage.getItem<string>("cards") || [];
-    try {
-      cards = JSON.parse(cards)
+    if(values.front.trim() == '' || values.back.trim() == '') {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Please all the fields"
+      });
+      return
     }
-    catch(err) {
-      console.log(err)
-    }
-    cards.push({...values, created_at: new Date().toLocaleString()})
-    console.log('storage:')
-    console.log(cards)
-    await LocalStorage.setItem("cards", JSON.stringify(cards));
+    let cards = await getCards()
+
+    cards.push({...values, created_at: new Date().toLocaleString(), id: new Date().getTime()})
+    await setCards(cards)
 
     await showToast({
       style: Toast.Style.Success,
@@ -21,6 +36,22 @@ function CreateCard() {
     });
     popToRoot()
   }
+
+  const [frontError, setFrontError] = useState<string | undefined>();
+  const [backError, setBackError] = useState<string | undefined>();
+
+  function dropFrontErrorIfNeeded() {
+    if (frontError && frontError.length > 0) {
+      setFrontError(undefined);
+    }
+  }
+  function dropBackErrorIfNeeded() {
+    if (backError && backError.length > 0) {
+      setBackError(undefined);
+    }
+  }
+
+
   return (
     <Form
       actions={
@@ -33,39 +64,85 @@ function CreateCard() {
         id="front"
         title="Front"
         placeholder="term"
+        error={frontError}
+        onChange={dropFrontErrorIfNeeded}
+        onBlur={(event) => {
+          if (event.target.value?.length == 0) {
+            setFrontError("The field should't be empty!");
+          } else {
+            dropFrontErrorIfNeeded();
+          }
+        }}
       />
       <Form.TextArea
         id="back"
         title="Back"
         placeholder="definition"
+        error={backError}
+        onChange={dropBackErrorIfNeeded}
+        onBlur={(event) => {
+          if (event.target.value?.length == 0) {
+            setBackError("The field should't be empty!");
+          } else {
+            dropBackErrorIfNeeded();
+          }
+        }}
       />
     </Form>
+  )
+}
+
+function ListCardActions(props) {
+  const deleteCard = async function(){
+    let cards = await getCards()
+    const newCards = cards.filter((current) => {
+      return current.id != props.card.id
+    })
+    await setCards(newCards)
+    await showToast({
+      style: Toast.Style.Success,
+      title: "Card deleted!"
+    });
+    props.onDeleted()
+  }
+  return (
+    <Action
+      title="Delete card"
+      icon={Icon.Trash}
+      onAction={deleteCard}
+    />
   )
 }
 
 function ListCards() {
   const [cards, setCards] = useState([]);
 
+  const fetchCards = async function(){
+    let cards = await getCards()
+    setCards(cards)
+  }
+
   useEffect(() => {
-    async function fetchCards(){
-      let localCards = await LocalStorage.getItem<string>("cards") || [];
-      try {
-        localCards = JSON.parse(localCards)
-      }
-      catch(err) {
-        console.log(err)
-      }
-      console.log(localCards)
-      setCards(localCards)
-    }
     fetchCards()
-  })
+  }, [])
+
+  const onDeleted = function(){
+    fetchCards()
+  }
 
   return (
-    <List isShowingDetail>
+    <List
+      isShowingDetail
+    >
       {cards.map((card) => (
         <List.Item
           title={card.front}
+          key={card.id}
+          actions={
+            <ActionPanel>
+              <ListCardActions card={card} onDeleted={onDeleted}/>
+            </ActionPanel>
+          }
           detail={
             <List.Item.Detail
               metadata={

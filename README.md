@@ -11,3 +11,8 @@ A flashcard extension for [Raycast](https://www.raycast.com/).
 ```sh
 npm run dev
 ```
+
+## Todo
+
+- [ ] store cards at `$HOME/.flashcards.json` instead of local storage
+- [ ] create screen to memorize cards
