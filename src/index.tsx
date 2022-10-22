@@ -1,19 +1,25 @@
-import { ActionPanel, Form, Detail, List, Action, Icon, popToRoot, LocalStorage, showToast, Toast } from "@raycast/api";
-import { useCallback, useState, useEffect } from "react";
+import { ActionPanel, Form, List, Action, Icon, popToRoot, showToast, Toast } from "@raycast/api";
+import { useState, useEffect } from "react";
+import fs from "fs";
+import os from "node:os";
+import path from "node:path";
+const jsonFile = `${os.homedir()}${path.sep}.flashcards.json`;
 
 const getCards = async function() {
-  let cards = await LocalStorage.getItem<string>("cards") || [];
+  let cards = fs.readFileSync(jsonFile)
+
   try {
     cards = JSON.parse(cards)
   }
   catch(err) {
     console.log(err)
   }
-  return cards
+  return cards || []
 }
 
 const setCards = async function(cards) {
-  return await LocalStorage.setItem("cards", JSON.stringify(cards));
+  const cardsString = JSON.stringify(cards, null, 2)
+  await fs.writeFile(jsonFile, cardsString, () => {})
 }
 
 function CreateCard() {
@@ -50,7 +56,6 @@ function CreateCard() {
       setBackError(undefined);
     }
   }
-
 
   return (
     <Form
@@ -110,6 +115,7 @@ function ListCardActions(props) {
       title="Delete card"
       icon={Icon.Trash}
       onAction={deleteCard}
+      shortcut={{ modifiers: ["cmd"], key: "d" }}
     />
   )
 }
