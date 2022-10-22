@@ -1,4 +1,4 @@
-# Raycast Flashcards
+# <img src="https://raw.githubusercontent.com/glaucocustodio/raycast-flashcards/master/assets/flashcard-icon.png" width="28" height="28"> Raycast Flashcards
 
 A flashcard extension for [Raycast](https://www.raycast.com/).
 
@@ -30,3 +30,7 @@ make watch
 
 - [https://developers.raycast.com/](https://developers.raycast.com/)
 - [https://github.com/raycast/extensions](https://developers.raycast.com/)
+
+## Credits
+
+[Icon created by Freepik - Flaticon](https://www.flaticon.com/free-icons/flash-cards)

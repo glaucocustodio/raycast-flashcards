@@ -3,7 +3,10 @@
   "name": "flashcards",
   "title": "Flashcards",
   "description": "",
-  "icon": "command-icon.png",
+  "icon": "flashcard-icon.png",
+  "categories": [
+    "Productivity"
+  ],
   "author": "glaucocustodio",
   "license": "MIT",
   "commands": [
