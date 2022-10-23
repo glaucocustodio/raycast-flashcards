@@ -29,7 +29,7 @@ make watch
 ## References
 
 - [https://developers.raycast.com/](https://developers.raycast.com/)
-- [https://github.com/raycast/extensions](https://developers.raycast.com/)
+- [https://github.com/raycast/extensions](https://github.com/raycast/extensions)
 
 ## Credits
 

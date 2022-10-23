@@ -6,15 +6,15 @@ import path from "node:path";
 const jsonFile = `${os.homedir()}${path.sep}.flashcards.json`;
 
 const getCards = async function() {
-  let cards = fs.readFileSync(jsonFile)
-
+  let cards = []
   try {
+    cards = fs.readFileSync(jsonFile)
     cards = JSON.parse(cards)
   }
   catch(err) {
     console.log(err)
   }
-  return cards || []
+  return cards
 }
 
 const setCards = async function(cards) {
@@ -33,7 +33,7 @@ function CreateCard() {
     }
     let cards = await getCards()
 
-    cards.push({...values, created_at: new Date().toLocaleString(), id: new Date().getTime()})
+    cards.push({...values, created_at: new Date().toLocaleString('en-GB'), id: new Date().getTime()})
     await setCards(cards)
 
     await showToast({
