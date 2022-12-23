@@ -10,6 +10,7 @@ const getCards = async function() {
   try {
     cards = fs.readFileSync(jsonFile)
     cards = JSON.parse(cards)
+    cards.map(card => ({...card, flipped: true}))
   }
   catch(err) {
     console.log(err)
@@ -122,10 +123,12 @@ function ListCardActions(props) {
 
 function ListCards() {
   const [cards, setCards] = useState([]);
+  const [changes, setChanges] = useState(Date.now());
 
   const fetchCards = async function(){
     let cards = await getCards()
-    setCards(cards)
+    let shuffledCards = cards.sort((a, b) => 0.5 - Math.random())
+    setCards(shuffledCards)
   }
 
   useEffect(() => {
@@ -134,6 +137,19 @@ function ListCards() {
 
   const onDeleted = function(){
     fetchCards()
+  }
+
+  const display = function(card){
+    if (card.flipped) {
+      return "## Back\n" + card.back
+    } else {
+      return "## Front\n" + card.front
+    }
+  }
+
+  const flipCard = function(card){
+    card.flipped = !card.flipped
+    setChanges(Date.now())
   }
 
   return (
@@ -146,18 +162,17 @@ function ListCards() {
           key={card.id}
           actions={
             <ActionPanel>
+              <Action
+                title="Flip card"
+                icon={Icon.Check}
+                onAction={() => { flipCard(card) }}
+              />
               <ListCardActions card={card} onDeleted={onDeleted}/>
             </ActionPanel>
           }
           detail={
             <List.Item.Detail
-              metadata={
-                <List.Item.Detail.Metadata>
-                  <List.Item.Detail.Metadata.Label title="Front" text={card.front} />
-                  <List.Item.Detail.Metadata.Label title="Back" text={card.back} />
-                  <List.Item.Detail.Metadata.Label title="Created at" text={card.created_at} />
-                </List.Item.Detail.Metadata>
-              }
+              markdown={display(card)}
             />
           }
         />

@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "flashcards",
   "title": "Flashcards",
-  "description": "",
+  "description": "Create and memorize flashcards.",
   "icon": "flashcard-icon.png",
   "categories": [
     "Productivity"
