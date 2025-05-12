@@ -4,13 +4,14 @@ import fs from "fs";
 import os from "node:os";
 import path from "node:path";
 const jsonFile = `${os.homedir()}${path.sep}.flashcards.json`;
+type Card = { front: string, back: string, flipped: boolean, id: number, created_at: string }
 
-const getCards = async function() {
-  let cards = []
+const getCards = async function(): Promise<Card[]> {
+  let cards: Card[];
+  cards = [];
   try {
-    cards = fs.readFileSync(jsonFile)
-    cards = JSON.parse(cards)
-    cards.map(card => ({...card, flipped: true}))
+    cards = JSON.parse(fs.readFileSync(jsonFile).toString())
+    cards.map((card: Card) => ({...card, flipped: true}))
   }
   catch(err) {
     console.log(err)
@@ -18,13 +19,13 @@ const getCards = async function() {
   return cards
 }
 
-const setCards = async function(cards) {
+const setCards = async function(cards: Card[]) {
   const cardsString = JSON.stringify(cards, null, 2)
-  await fs.writeFile(jsonFile, cardsString, () => {})
+  await fs.writeFile(jsonFile, cardsString, () => { console.log("file saved") })
 }
 
 function CreateCard() {
-  const onSubmitForm = async (values) => {
+  const onSubmitForm = async (values: Card) => {
     if(values.front.trim() == '' || values.back.trim() == '') {
       await showToast({
         style: Toast.Style.Failure,
@@ -32,7 +33,7 @@ function CreateCard() {
       });
       return
     }
-    let cards = await getCards()
+    const cards = await getCards()
 
     cards.push({...values, created_at: new Date().toLocaleString('en-GB'), id: new Date().getTime()})
     await setCards(cards)
@@ -98,10 +99,10 @@ function CreateCard() {
   )
 }
 
-function ListCardActions(props) {
+function ListCardActions(props: { [key: string]: any }) {
   const deleteCard = async function(){
-    let cards = await getCards()
-    const newCards = cards.filter((current) => {
+    const cards = await getCards()
+    const newCards = cards.filter((current: Card) => {
       return current.id != props.card.id
     })
     await setCards(newCards)
@@ -126,8 +127,8 @@ function ListCards() {
   const [changes, setChanges] = useState(Date.now());
 
   const fetchCards = async function(){
-    let cards = await getCards()
-    let shuffledCards = cards.sort((a, b) => 0.5 - Math.random())
+    const cards = await getCards()
+    const shuffledCards = cards.sort(() => 0.5 - Math.random())
     setCards(shuffledCards)
   }
 
@@ -139,7 +140,7 @@ function ListCards() {
     fetchCards()
   }
 
-  const display = function(card){
+  const display = function(card: Card){
     if (card.flipped) {
       return "## Back\n" + card.back
     } else {
@@ -147,7 +148,7 @@ function ListCards() {
     }
   }
 
-  const flipCard = function(card){
+  const flipCard = function(card: Card){
     card.flipped = !card.flipped
     setChanges(Date.now())
   }
@@ -156,7 +157,7 @@ function ListCards() {
     <List
       isShowingDetail
     >
-      {cards.map((card) => (
+      {cards.map((card: Card) => (
         <List.Item
           title={card.front}
           key={card.id}
