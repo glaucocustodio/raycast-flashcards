@@ -3,46 +3,53 @@ import { useState, useEffect } from "react";
 import fs from "fs";
 import os from "node:os";
 import path from "node:path";
+
+interface Card {
+  id: number;
+  front: string;
+  back: string;
+  created_at: string;
+  flipped?: boolean;
+}
+
 const jsonFile = `${os.homedir()}${path.sep}.flashcards.json`;
 
-const getCards = async function() {
-  let cards = []
+const getCards = async function (): Promise<Card[]> {
+  let cards: Card[] = [];
   try {
-    cards = fs.readFileSync(jsonFile)
-    cards = JSON.parse(cards)
-    cards.map(card => ({...card, flipped: true}))
+    const raw = fs.readFileSync(jsonFile, "utf-8");
+    cards = JSON.parse(raw);
+  } catch (err) {
+    console.log(err);
   }
-  catch(err) {
-    console.log(err)
-  }
-  return cards
-}
+  return cards;
+};
 
-const setCards = async function(cards) {
-  const cardsString = JSON.stringify(cards, null, 2)
-  await fs.writeFile(jsonFile, cardsString, () => {})
-}
+const setCards = async function (cards: Card[]) {
+  const cardsString = JSON.stringify(cards, null, 2);
+  fs.writeFileSync(jsonFile, cardsString);
+};
 
 function CreateCard() {
-  const onSubmitForm = async (values) => {
-    if(values.front.trim() == '' || values.back.trim() == '') {
+  const onSubmitForm = async (values: { front: string; back: string }) => {
+    if (values.front.trim() == "" || values.back.trim() == "") {
       await showToast({
         style: Toast.Style.Failure,
-        title: "Please all the fields"
+        title: "Please fill in all the fields",
       });
-      return
+      return;
     }
-    let cards = await getCards()
+    const cards = await getCards();
 
-    cards.push({...values, created_at: new Date().toLocaleString('en-GB'), id: new Date().getTime()})
-    await setCards(cards)
+    cards.push({ ...values, created_at: new Date().toLocaleString("en-GB"), id: new Date().getTime() });
+    await setCards(cards);
 
     await showToast({
       style: Toast.Style.Success,
-      title: "Card created!"
+      title: "Card created!",
     });
-    popToRoot()
-  }
+    popToRoot();
+  };
 
   const [frontError, setFrontError] = useState<string | undefined>();
   const [backError, setBackError] = useState<string | undefined>();
@@ -95,67 +102,58 @@ function CreateCard() {
         }}
       />
     </Form>
-  )
+  );
 }
 
-function ListCardActions(props) {
-  const deleteCard = async function(){
-    let cards = await getCards()
+function ListCardActions(props: { card: Card; onDeleted: () => void }) {
+  const deleteCard = async function () {
+    const cards = await getCards();
     const newCards = cards.filter((current) => {
-      return current.id != props.card.id
-    })
-    await setCards(newCards)
+      return current.id != props.card.id;
+    });
+    await setCards(newCards);
     await showToast({
       style: Toast.Style.Success,
-      title: "Card deleted!"
+      title: "Card deleted!",
     });
-    props.onDeleted()
-  }
+    props.onDeleted();
+  };
   return (
-    <Action
-      title="Delete card"
-      icon={Icon.Trash}
-      onAction={deleteCard}
-      shortcut={{ modifiers: ["cmd"], key: "d" }}
-    />
-  )
+    <Action title="Delete card" icon={Icon.Trash} onAction={deleteCard} shortcut={{ modifiers: ["cmd"], key: "d" }} />
+  );
 }
 
 function ListCards() {
-  const [cards, setCards] = useState([]);
-  const [changes, setChanges] = useState(Date.now());
-
-  const fetchCards = async function(){
-    let cards = await getCards()
-    let shuffledCards = cards.sort((a, b) => 0.5 - Math.random())
-    setCards(shuffledCards)
-  }
+  const [cards, setCards] = useState<Card[]>([]);
+  const fetchCards = async function () {
+    const cards = await getCards();
+    const shuffledCards = cards.sort(() => 0.5 - Math.random());
+    setCards(shuffledCards);
+  };
 
   useEffect(() => {
-    fetchCards()
-  }, [])
+    fetchCards();
+  }, []);
 
-  const onDeleted = function(){
-    fetchCards()
-  }
+  const onDeleted = function () {
+    fetchCards();
+  };
 
-  const display = function(card){
+  const display = function (card: Card) {
     if (card.flipped) {
-      return "## Back\n" + card.back
+      return "## Back\n" + card.back;
     } else {
-      return "## Front\n" + card.front
+      return "## Front\n" + card.front;
     }
-  }
+  };
 
-  const flipCard = function(card){
-    card.flipped = !card.flipped
-    setChanges(Date.now())
-  }
+  const flipCard = function (card: Card) {
+    card.flipped = !card.flipped;
+    setCards([...cards]);
+  };
 
   return (
-    <List
-      isShowingDetail
-    >
+    <List isShowingDetail>
       {cards.map((card) => (
         <List.Item
           title={card.front}
@@ -165,20 +163,18 @@ function ListCards() {
               <Action
                 title="Flip card"
                 icon={Icon.Check}
-                onAction={() => { flipCard(card) }}
+                onAction={() => {
+                  flipCard(card);
+                }}
               />
-              <ListCardActions card={card} onDeleted={onDeleted}/>
+              <ListCardActions card={card} onDeleted={onDeleted} />
             </ActionPanel>
           }
-          detail={
-            <List.Item.Detail
-              markdown={display(card)}
-            />
-          }
+          detail={<List.Item.Detail markdown={display(card)} />}
         />
       ))}
     </List>
-  )
+  );
 }
 export default function Command() {
   return (
@@ -188,11 +184,7 @@ export default function Command() {
         title="Create card"
         actions={
           <ActionPanel>
-            <Action.Push
-              icon={Icon.Pencil}
-              title="Create card"
-              target={<CreateCard/>}
-            />
+            <Action.Push icon={Icon.Pencil} title="Create card" target={<CreateCard />} />
           </ActionPanel>
         }
       />
@@ -201,11 +193,7 @@ export default function Command() {
         title="List cards"
         actions={
           <ActionPanel>
-            <Action.Push
-              icon={Icon.List}
-              title="List cards"
-              target={<ListCards/>}
-            />
+            <Action.Push icon={Icon.List} title="List cards" target={<ListCards />} />
           </ActionPanel>
         }
       />

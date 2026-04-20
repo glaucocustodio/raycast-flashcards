@@ -20,6 +20,12 @@ Watch json file with cards:
 make watch
 ```
 
+## Features
+
+- **Create cards** — add a front (term) and back (definition)
+- **Study cards** — cards are shuffled each session; flip each card to reveal the other side
+- **Delete cards** — remove a card with `⌘D`
+
 ## Todo
 
 - [ ] allow editing of cards
