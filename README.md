@@ -24,11 +24,11 @@ make watch
 
 - **Create cards** — add a front (term) and back (definition)
 - **Study cards** — cards are shuffled each session; flip each card to reveal the other side
-- **Delete cards** — remove a card with `⌘D`
+- **Delete cards** — remove a card with `⌘d`
+- **Edit cards** — edit a card with `⌘e`
 
 ## Todo
 
-- [ ] allow editing of cards
 - [ ] add screen to memorize cards
 - [ ] publish on the store
 

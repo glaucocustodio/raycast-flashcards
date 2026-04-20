@@ -1,4 +1,4 @@
-import { ActionPanel, Form, List, Action, Icon, popToRoot, showToast, Toast } from "@raycast/api";
+import { ActionPanel, Form, List, Action, Icon, popToRoot, useNavigation, showToast, Toast } from "@raycast/api";
 import { useState, useEffect } from "react";
 import fs from "fs";
 import os from "node:os";
@@ -31,6 +31,8 @@ const setCards = async function (cards: Card[]) {
 };
 
 function CreateCard() {
+  const { push } = useNavigation();
+
   const onSubmitForm = async (values: { front: string; back: string }) => {
     if (values.front.trim() == "" || values.back.trim() == "") {
       await showToast({
@@ -48,7 +50,7 @@ function CreateCard() {
       style: Toast.Style.Success,
       title: "Card created!",
     });
-    popToRoot();
+    push(<ListCards />);
   };
 
   const [frontError, setFrontError] = useState<string | undefined>();
@@ -105,7 +107,80 @@ function CreateCard() {
   );
 }
 
-function ListCardActions(props: { card: Card; onDeleted: () => void }) {
+function EditCard(props: { card: Card; onEdited: () => void }) {
+  const { card } = props;
+  const { pop } = useNavigation();
+
+  const onSubmitForm = async (values: { front: string; back: string }) => {
+    if (values.front.trim() == "" || values.back.trim() == "") {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Please fill in all the fields",
+      });
+      return;
+    }
+    const cards = await getCards();
+    const updated = cards.map((c) => (c.id === card.id ? { ...c, front: values.front, back: values.back } : c));
+    await setCards(updated);
+    await showToast({
+      style: Toast.Style.Success,
+      title: "Card updated!",
+    });
+    props.onEdited();
+    pop();
+  };
+
+  const [frontError, setFrontError] = useState<string | undefined>();
+  const [backError, setBackError] = useState<string | undefined>();
+
+  function dropFrontErrorIfNeeded() {
+    if (frontError && frontError.length > 0) setFrontError(undefined);
+  }
+  function dropBackErrorIfNeeded() {
+    if (backError && backError.length > 0) setBackError(undefined);
+  }
+
+  return (
+    <Form
+      actions={
+        <ActionPanel>
+          <Action.SubmitForm title="Save" onSubmit={onSubmitForm} />
+        </ActionPanel>
+      }
+    >
+      <Form.TextArea
+        id="front"
+        title="Front"
+        defaultValue={card.front}
+        error={frontError}
+        onChange={dropFrontErrorIfNeeded}
+        onBlur={(event) => {
+          if (event.target.value?.length == 0) {
+            setFrontError("The field should't be empty!");
+          } else {
+            dropFrontErrorIfNeeded();
+          }
+        }}
+      />
+      <Form.TextArea
+        id="back"
+        title="Back"
+        defaultValue={card.back}
+        error={backError}
+        onChange={dropBackErrorIfNeeded}
+        onBlur={(event) => {
+          if (event.target.value?.length == 0) {
+            setBackError("The field should't be empty!");
+          } else {
+            dropBackErrorIfNeeded();
+          }
+        }}
+      />
+    </Form>
+  );
+}
+
+function ListCardActions(props: { card: Card; onDeleted: () => void; onEdited: () => void }) {
   const deleteCard = async function () {
     const cards = await getCards();
     const newCards = cards.filter((current) => {
@@ -119,7 +194,15 @@ function ListCardActions(props: { card: Card; onDeleted: () => void }) {
     props.onDeleted();
   };
   return (
-    <Action title="Delete card" icon={Icon.Trash} onAction={deleteCard} shortcut={{ modifiers: ["cmd"], key: "d" }} />
+    <>
+      <Action.Push
+        title="Edit card"
+        icon={Icon.Pencil}
+        target={<EditCard card={props.card} onEdited={props.onEdited} />}
+        shortcut={{ modifiers: ["cmd"], key: "e" }}
+      />
+      <Action title="Delete card" icon={Icon.Trash} onAction={deleteCard} shortcut={{ modifiers: ["cmd"], key: "d" }} />
+    </>
   );
 }
 
@@ -136,6 +219,10 @@ function ListCards() {
   }, []);
 
   const onDeleted = function () {
+    fetchCards();
+  };
+
+  const onEdited = function () {
     fetchCards();
   };
 
@@ -167,7 +254,7 @@ function ListCards() {
                   flipCard(card);
                 }}
               />
-              <ListCardActions card={card} onDeleted={onDeleted} />
+              <ListCardActions card={card} onDeleted={onDeleted} onEdited={onEdited} />
             </ActionPanel>
           }
           detail={<List.Item.Detail markdown={display(card)} />}
